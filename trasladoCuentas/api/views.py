@@ -47,6 +47,33 @@ def registro(request):
 
     return JsonResponse({"registered": True, "token": random_token, "mensaje": f"Bienvenido/a a ABANCA, {json_nombre}"}, status=201)
 
+
+@csrf_exempt
+def login(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método HTTP no soportado'}, status=405)
+
+    try:
+        body_json = json.loads(request.body)
+        json_dni = body_json.get('dni')
+        json_password = body_json.get('password')
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Faltan parámetros en el cuerpo del JSON"}, status=400)
+
+    try:
+        db_user = Cliente.objects.get(dni=json_dni)
+    except Cliente.DoesNotExist:
+        return JsonResponse({"error": "Usuario no encontrado"}, status=404)
+
+    if bcrypt.checkpw(json_password.encode('utf8'), db_user.password_cifrada.encode('utf8')):
+        random_token = secrets.token_hex(10)
+        db_user.token_sesion = random_token
+        db_user.save()
+
+        return JsonResponse({ "token": random_token, "dni": db_user.dni}, status=200)
+    else:
+        return JsonResponse({"error": "Credenciales inválidas"}, status=401)
+
 def __get_request_user(request):
     header_token = request.headers.get('Session', None)
     if header_token is None:
