@@ -4,7 +4,7 @@ import bcrypt
 import secrets
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Cliente, Tarjeta, Movimiento
+from .models import Cliente, Tarjeta, Movimiento, SolicitudTraslado
 
 # Create your views here.
 
@@ -114,6 +114,33 @@ def resumen_banca(request):
             "ultimos_movimientos": movimientos_json
         })
     return JsonResponse(cuentas_json, safe=False, status=200)
+
+@csrf_exempt
+def solicitudes(request):
+    authenticated_user = __get_request_user(request)
+    if authenticated_user is None:
+        return JsonResponse({"error": "Falta el token de sesión o es inválido"}, status=401)
+
+    if request.method == 'GET':
+        solicitudes = SolicitudTraslado.objects.filter(cliente=authenticated_user)
+        json_list = []
+        for s in solicitudes:
+            json_list.append({
+                "id": s.id,
+                "referencia": s.referencia,
+                "entidad_origen": s.entidad_origen,
+                "iban_origen": s.iban_origen,
+                "iban_destino": s.iban_destino,
+                "estado": s.estado,
+                "fecha_ejecucion": s.fecha_ejecucion.strftime('%Y-%m-%d'),
+                "fecha_solicitud": s.fecha_solicitud.strftime('%d/%m/%Y %H:%M')
+            })
+
+        return JsonResponse(json_list, safe=False, status=200)
+
+    #TODO: elif request.method == 'POST':
+    else:
+        return JsonResponse({'error': 'Método HTTP no soportado'}, status=405)
 
 def __get_request_user(request):
     header_token = request.headers.get('Session', None)
