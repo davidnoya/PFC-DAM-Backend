@@ -4,7 +4,7 @@ import bcrypt
 import secrets
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Cliente
+from .models import Cliente, Tarjeta, Movimiento
 
 # Create your views here.
 
@@ -73,6 +73,47 @@ def login(request):
         return JsonResponse({ "token": random_token, "dni": db_user.dni}, status=200)
     else:
         return JsonResponse({"error": "Credenciales inválidas"}, status=401)
+
+
+@csrf_exempt
+def resumen_banca(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Método HTTP no soportado'}, status=405)
+
+    authenticated_user = __get_request_user(request)
+    if authenticated_user is None:
+        return JsonResponse({"error": "Falta el token de sesión o es inválido"}, status=401)
+
+    cuentas = authenticated_user.cuentas.all()
+    cuentas_json = []
+
+    for cuenta in cuentas:
+        tarjetas = Tarjeta.objects.filter(cuenta=cuenta)
+        tarjetas_json = []
+        for t in tarjetas:
+            tarjetas_json.append({
+                "pan": t.pan,
+                "tipo": t.tipo,
+                "activa": t.activa
+            })
+
+        movimientos = Movimiento.objects.filter(cuenta=cuenta).order_by('-fecha')[:5]
+        movimientos_json = []
+        for m in movimientos:
+            movimientos_json.append({
+                "concepto": m.concepto,
+                "importe": float(m.importe),
+                "fecha": m.fecha.strftime('%d/%m/%Y')
+            })
+
+        cuentas_json.append({
+            "iban": cuenta.iban,
+            "alias": cuenta.alias,
+            "saldo": float(cuenta.saldo),
+            "tarjetas": tarjetas_json,
+            "ultimos_movimientos": movimientos_json
+        })
+    return JsonResponse(cuentas_json, safe=False, status=200)
 
 def __get_request_user(request):
     header_token = request.headers.get('Session', None)
