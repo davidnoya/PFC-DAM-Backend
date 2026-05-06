@@ -139,7 +139,49 @@ def solicitudes(request):
 
         return JsonResponse(json_list, safe=False, status=200)
 
-    #TODO: elif request.method == 'POST':
+    elif request.method == 'POST':
+        try:
+            body_json = json.loads(request.body)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Formato JSON inválido"}, status=400)
+
+        campos_obligatorios = ['entidad_origen', 'iban_origen', 'iban_destino', 'fecha_ejecucion']
+        for campo in campos_obligatorios:
+            if not body_json.get(campo):
+                return JsonResponse({"error": f"Falta el campo: {campo}"}, status=400)
+
+        ultima_solicitud = SolicitudTraslado.objects.order_by('-id').first()
+        if ultima_solicitud and ultima_solicitud.referencia.startswith('REF'):
+            try:
+                nuevo_numero = int(ultima_solicitud.referencia[3:]) + 1
+            except ValueError:
+                nuevo_numero = 1
+        else:
+            nuevo_numero = 1
+
+        referencia_generada = f"REF{nuevo_numero:04d}"
+
+        nueva_solicitud = SolicitudTraslado(
+            cliente=authenticated_user,
+            referencia=referencia_generada,
+            entidad_origen=body_json['entidad_origen'],
+            iban_origen=body_json['iban_origen'],
+            iban_destino=body_json['iban_destino'],
+
+            pet_cancelar_ordenes=body_json.get('pet_cancelar_ordenes', False),
+            pet_bloquear_entrantes=body_json.get('pet_bloquear_entrantes', False),
+            pet_transferir_saldo_cierre=body_json.get('pet_transferir_saldo_cierre', False),
+            pet_recibir_info=body_json.get('pet_recibir_info', False),
+
+            act_habilitar_ordenes=body_json.get('act_habilitar_ordenes', False),
+            act_aceptar_adeudos=body_json.get('act_aceptar_adeudos', False),
+            act_informar_emisores=body_json.get('act_informar_emisores', False),
+
+            fecha_ejecucion=body_json['fecha_ejecucion']
+        )
+        nueva_solicitud.save()
+
+        return JsonResponse({ "mensaje": "Solicitud de traslado creada con éxito", "referencia": referencia_generada}, status=201)
     else:
         return JsonResponse({'error': 'Método HTTP no soportado'}, status=405)
 
