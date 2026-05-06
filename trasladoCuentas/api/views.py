@@ -103,7 +103,8 @@ def resumen_banca(request):
             movimientos_json.append({
                 "concepto": m.concepto,
                 "importe": float(m.importe),
-                "fecha": m.fecha.strftime('%d/%m/%Y')
+                "fecha": m.fecha.strftime('%d/%m/%Y'),
+                "tarjeta_asociada": m.tarjeta.pan if m.tarjeta else None
             })
 
         cuentas_json.append({

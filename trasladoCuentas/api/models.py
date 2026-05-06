@@ -27,7 +27,7 @@ class Cuenta(models.Model):
 class Tarjeta(models.Model):
     TIPOS = [('DEBITO', 'Débito'), ('CREDITO', 'Crédito')]
     cuenta = models.ForeignKey(Cuenta, on_delete=models.CASCADE, related_name='tarjetas')
-    pan = models.CharField(max_length=20)
+    pan = models.CharField(max_length=20, unique=True)
     tipo = models.CharField(max_length=10, choices=TIPOS)
     activa = models.BooleanField(default=True)
 
@@ -36,12 +36,14 @@ class Tarjeta(models.Model):
 
 class Movimiento(models.Model):
     cuenta = models.ForeignKey(Cuenta, on_delete=models.CASCADE, related_name='movimientos')
+    tarjeta = models.ForeignKey(Tarjeta, on_delete=models.SET_NULL, null=True, blank=True)
     concepto = models.CharField(max_length=100)
     importe = models.DecimalField(max_digits=10, decimal_places=2)
     fecha = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.fecha.strftime('%d/%m/%Y')} - {self.concepto}: {self.importe}€"
+        origen = f" (Tarjeta {self.tarjeta.pan})" if self.tarjeta else " (Cuenta)"
+        return f"{self.fecha.strftime('%d/%m/%Y')} - {self.concepto}{origen}: {self.importe}€"
 
 
 class SolicitudTraslado(models.Model):
