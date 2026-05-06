@@ -185,6 +185,41 @@ def solicitudes(request):
     else:
         return JsonResponse({'error': 'Método HTTP no soportado'}, status=405)
 
+
+@csrf_exempt
+def detalle_solicitud(request, refSolicitud):
+    authenticated_user = __get_request_user(request)
+    if authenticated_user is None:
+        return JsonResponse({"error": "Falta el token de sesión o es inválido"}, status=401)
+    if request.method == 'GET':
+        try:
+            solicitud = SolicitudTraslado.objects.get(referencia=refSolicitud, cliente=authenticated_user)
+            solicitud_json = {
+                "referencia": solicitud.referencia,
+                "entidad_origen": solicitud.entidad_origen,
+                "iban_origen": solicitud.iban_origen,
+                "iban_destino": solicitud.iban_destino,
+                "estado": solicitud.estado,
+                "fecha_ejecucion": solicitud.fecha_ejecucion.strftime('%Y-%m-%d'),
+                "fecha_solicitud": solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M'),
+
+                "pet_cancelar_ordenes": solicitud.pet_cancelar_ordenes,
+                "pet_bloquear_entrantes": solicitud.pet_bloquear_entrantes,
+                "pet_transferir_saldo_cierre": solicitud.pet_transferir_saldo_cierre,
+                "pet_recibir_info": solicitud.pet_recibir_info,
+
+                "act_habilitar_ordenes": solicitud.act_habilitar_ordenes,
+                "act_aceptar_adeudos": solicitud.act_aceptar_adeudos,
+                "act_informar_emisores": solicitud.act_informar_emisores
+            }
+
+            return JsonResponse(solicitud_json, status=200)
+
+        except SolicitudTraslado.DoesNotExist:
+            return JsonResponse({"error": "La solicitud no existe"}, status=404)
+    else:
+        return JsonResponse({'error': 'Método HTTP no soportado'}, status=405)
+
 def __get_request_user(request):
     header_token = request.headers.get('Session', None)
     if header_token is None:

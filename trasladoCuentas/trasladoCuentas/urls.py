@@ -23,5 +23,6 @@ urlpatterns = [
     path('registro/', views.registro),
     path('login/', views.login),
     path('resumen-banca/', views.resumen_banca),
-    path('solicitudes/', views.solicitudes)
+    path('solicitudes/', views.solicitudes),
+    path('detalle-solicitud/<str:refSolicitud>/', views.detalle_solicitud)
 ]
