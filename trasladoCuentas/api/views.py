@@ -143,7 +143,7 @@ def solicitudes(request):
         try:
             body_json = json.loads(request.body)
         except json.JSONDecodeError:
-            return JsonResponse({"error": "Formato JSON inválido"}, status=400)
+            return JsonResponse({"error": "Faltan parámetros en el cuerpo del JSON"}, status=400)
 
         campos_obligatorios = ['entidad_origen', 'iban_origen', 'iban_destino', 'fecha_ejecucion']
         for campo in campos_obligatorios:
@@ -212,8 +212,20 @@ def detalle_solicitud(request, refSolicitud):
                 "act_aceptar_adeudos": solicitud.act_aceptar_adeudos,
                 "act_informar_emisores": solicitud.act_informar_emisores
             }
-
             return JsonResponse(solicitud_json, status=200)
+
+        except SolicitudTraslado.DoesNotExist:
+            return JsonResponse({"error": "La solicitud no existe"}, status=404)
+
+    elif request.method == 'DELETE':
+        try:
+            solicitud = SolicitudTraslado.objects.get(referencia=refSolicitud, cliente=authenticated_user)
+
+            if solicitud.estado != 'PENDIENTE':
+                return JsonResponse({"error": f"No se puede cancelar la solicitud porque ya está en estado: {solicitud.estado}"}, status=400)
+
+            solicitud.delete()
+            return JsonResponse({"mensaje": f"Solicitud con {refSolicitud} eliminada"}, status=200)
 
         except SolicitudTraslado.DoesNotExist:
             return JsonResponse({"error": "La solicitud no existe"}, status=404)
