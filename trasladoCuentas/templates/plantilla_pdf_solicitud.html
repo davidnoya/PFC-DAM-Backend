@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        @page {
+            size: A4;
+            margin: 1.5cm;
+            @frame footer {
+                -pdf-frame-content: footer_content;
+                bottom: 1cm;
+                margin-left: 1.5cm;
+                margin-right: 1.5cm;
+                height: 1cm;
+            }
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #2C3E50;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .header-table {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .brand {
+            color: #004F9F;
+            font-size: 32px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+        .document-title {
+            color: #7F8C8D;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+        .ref-box {
+            background-color: #F4F7F9;
+            border: 1px solid #DCE4EC;
+            padding: 10px;
+            text-align: center;
+        }
+        .ref-label {
+            color: #95A5A6;
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+        .ref-value {
+            color: #004F9F;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .divider {
+            height: 3px;
+            background-color: #00B2A9;
+            margin-bottom: 25px;
+        }
+        .section-title {
+            color: #004F9F;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 2px solid #004F9F;
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+            margin-top: 30px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #ECF0F1;
+        }
+        .data-table .label {
+            width: 40%;
+            font-weight: bold;
+            color: #34495E;
+            background-color: #FAFAFA;
+        }
+        .data-table .value {
+            width: 60%;
+            color: #2C3E50;
+        }
+        .iban-text {
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .legal-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .legal-table td {
+            padding: 6px 10px;
+            border-bottom: none;
+            vertical-align: top;
+        }
+        .legal-table .long-text {
+            width: 88%;
+            color: #34495E;
+            text-align: justify;
+        }
+        .legal-table .status {
+            width: 12%;
+            text-align: right;
+        }
+        .badge-yes {
+            color: #117A65;
+            font-weight: bold;
+        }
+        .badge-no {
+            color: #C0392B;
+            font-weight: bold;
+        }
+        .signature-table {
+            width: 100%;
+            margin-top: 100px;
+        }
+        .signature-box {
+            text-align: center;
+        }
+        .signature-line {
+            border-top: 1px solid #7F8C8D;
+            width: 80%;
+            margin: 0 auto;
+            padding-top: 5px;
+            color: #7F8C8D;
+            font-size: 11px;
+        }
+        .footer-text {
+            font-size: 9px;
+            color: #BDC3C7;
+            text-align: center;
+            border-top: 1px solid #ECF0F1;
+            padding-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="footer_content" class="footer-text">
+        ABANCA Corporación Bancaria, S.A. - Documento contractual generado de forma automática el {% now "d/m/Y" %} a las {% now "H:i" %}
+    </div>
+
+    <table class="header-table">
+        <tr>
+            <td width="65%">
+                <img src="{{ ruta_logo }}" width="250" style="margin-bottom: 5px;">
+                <div class="document-title">Solicitud de Traslado de Cuenta</div>
+            </td>
+            <td width="35%" align="right">
+                <table style="width: 100%;">
+                    <tr>
+                        <td class="ref-box">
+                            <div class="ref-label">Referencia</div>
+                            <div class="ref-value">{{ s.referencia }}</div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <div class="divider"></div>
+
+    <p style="text-align: right; color: #7F8C8D; font-size: 11px;">
+        Fecha de registro en sistema: <strong>{{ s.fecha_solicitud|date:"d/m/Y" }}</strong>
+    </p>
+
+    <div class="section-title">1. Datos del Titular</div>
+    <table class="data-table">
+        <tr>
+            <td class="label">Nombre completo</td>
+            <td class="value">{{ s.cliente.nombre }} {{ s.cliente.apellidos }}</td>
+        </tr>
+        <tr>
+            <td class="label">Documento de Identidad (DNI)</td>
+            <td class="value">{{ s.cliente.dni }}</td>
+        </tr>
+        <tr>
+            <td class="label">Correo electrónico de contacto</td>
+            <td class="value">{{ s.cliente.email }}</td>
+        </tr>
+    </table>
+
+    <div class="section-title">2. Cuentas Implicadas en el Traslado</div>
+    <table class="data-table">
+        <tr>
+            <td class="label">Entidad de Origen</td>
+            <td class="value" style="text-transform: uppercase;"><strong>{{ s.entidad_origen }}</strong></td>
+        </tr>
+        <tr>
+            <td class="label">IBAN de la cuenta de Origen</td>
+            <td class="value iban-text">{{ s.iban_origen }}</td>
+        </tr>
+        <tr>
+            <td class="label">IBAN de Destino (ABANCA)</td>
+            <td class="value iban-text" style="color: #004F9F;">{{ s.iban_destino }}</td>
+        </tr>
+        <tr>
+            <td class="label">Fecha de Ejecución Solicitada</td>
+            <td class="value"><strong>{{ s.fecha_ejecucion|date:"d/m/Y" }}</strong></td>
+        </tr>
+    </table>
+
+    <div class="section-title">3. Peticiones para proceder al traslado (Proveedor Transmisor)</div>
+    <p style="font-size: 10px; color: #7F8C8D; margin-top: 0;">Mediante la presente autorización, el solicitante otorga su consentimiento específico para que en el plazo máximo de dos días hábiles procedan a solicitar al "proveedor transmisor":</p>
+
+    <table class="legal-table">
+        <tr>
+            <td class="long-text">A) Información de las órdenes permanentes de transferencia vinculadas a la cuenta indicada y la cancelación de éstas últimas, no antes de la fecha indicada en la autorización (1).</td>
+            <td class="status">{% if s.pet_cancelar_ordenes %}<span class="badge-yes">✔ SÍ</span>{% else %}<span class="badge-no">✘ NO</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <td class="long-text">B) Información disponible de las transferencias entrantes periódicas y adeudos domiciliados ejecutados con cargo a la cuenta en los 13 últimos meses, y cese de su aceptación a partir de la fecha indicada en la autorización (1).</td>
+            <td class="status">{% if s.pet_bloquear_entrantes %}<span class="badge-yes">✔ SÍ</span>{% else %}<span class="badge-no">✘ NO</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <td class="long-text">C) Transferencia del saldo existente a la nueva cuenta en la fecha indicada en la autorización (1) y cierre de la cuenta a traspasar.</td>
+            <td class="status">{% if s.pet_transferir_saldo_cierre %}<span class="badge-yes">✔ SÍ</span>{% else %}<span class="badge-no">✘ NO</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <td class="long-text">D) Transmisión al/los titular/es de la información solicitada en los apartados A y B.</td>
+            <td class="status">{% if s.pet_recibir_info %}<span class="badge-yes">✔ SÍ</span>{% else %}<span class="badge-no">✘ NO</span>{% endif %}</td>
+        </tr>
+    </table>
+
+    <div class="section-title">4. Actuaciones a seguir por el Proveedor Receptor</div>
+    <p style="font-size: 10px; color: #7F8C8D; margin-top: 0;">Autorizo al "proveedor receptor" para que, una vez reciba la información necesaria proceda de acuerdo con las siguientes instrucciones en el plazo máximo de cinco días hábiles:</p>
+
+    <table class="legal-table">
+        <tr>
+            <td class="long-text">A) Habilitar las órdenes permanentes de transferencia con cargo a mi cuenta a partir de la fecha indicada en la autorización (1).</td>
+            <td class="status">{% if s.act_habilitar_ordenes %}<span class="badge-yes">✔ SÍ</span>{% else %}<span class="badge-no">✘ NO</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <td class="long-text">B) Aceptar los adeudos domiciliados con cargo a mi cuenta a partir de la fecha indicada en la autorización (1).</td>
+            <td class="status">{% if s.act_aceptar_adeudos %}<span class="badge-yes">✔ SÍ</span>{% else %}<span class="badge-no">✘ NO</span>{% endif %}</td>
+        </tr>
+        <tr>
+            <td class="long-text">C) Comunicar a los emisores que efectúen transferencias entrantes periódicas y adeudos domiciliados, de los datos de mi nueva cuenta, así como la transmisión a estos emisores de una copia de la presente autorización (1).</td>
+            <td class="status">{% if s.act_informar_emisores %}<span class="badge-yes">✔ SÍ</span>{% else %}<span class="badge-no">✘ NO</span>{% endif %}</td>
+        </tr>
+    </table>
+
+    <table class="signature-table">
+        <tr>
+            <td class="signature-box" width="50%">
+                <div class="signature-line">
+                    Firma del Cliente Titular<br>
+                    <strong>{{ s.cliente.nombre }} {{ s.cliente.apellidos }}</strong>
+                </div>
+            </td>
+            <td class="signature-box" width="50%">
+                <div class="signature-line">
+                    Sello de la Entidad y Firma Digital<br>
+                    <strong>ABANCA</strong>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div style="font-size: 8px; color: #95A5A6; margin-top: 20px;">
+        (1) La fecha de ejecución no puede ser anterior a 13 días hábiles desde la firma de este documento.
+    </div>
+
+</body>
+</html>

@@ -24,5 +24,7 @@ urlpatterns = [
     path('login/', views.login),
     path('resumen-banca/', views.resumen_banca),
     path('solicitudes/', views.solicitudes),
-    path('detalle-solicitud/<str:refSolicitud>/', views.detalle_solicitud)
+    path('detalle-solicitud/<str:refSolicitud>/', views.detalle_solicitud),
+    path('generar-pdf/<str:refSolicitud>/', views.generar_pdf)
+
 ]

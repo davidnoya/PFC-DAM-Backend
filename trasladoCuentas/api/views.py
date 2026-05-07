@@ -1,8 +1,13 @@
 from django.shortcuts import render
+import os
 import json
 import bcrypt
 import secrets
-from django.http import JsonResponse
+from io import BytesIO
+from xhtml2pdf import pisa
+from django.conf import settings
+from django.template.loader import get_template
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Cliente, Tarjeta, Movimiento, SolicitudTraslado
 
@@ -231,6 +236,39 @@ def detalle_solicitud(request, refSolicitud):
             return JsonResponse({"error": "La solicitud no existe"}, status=404)
     else:
         return JsonResponse({'error': 'Método HTTP no soportado'}, status=405)
+
+
+@csrf_exempt
+def generar_pdf(request, refSolicitud):
+    authenticated_user = __get_request_user(request)
+    if authenticated_user is None:
+        return JsonResponse({"error": "Falta el token de sesión o es inválido"}, status=401)
+
+    try:
+        solicitud = SolicitudTraslado.objects.get(referencia=refSolicitud, cliente=authenticated_user)
+
+        logo = os.path.join(settings.BASE_DIR, 'static', 'abanca.png')
+        plantilla = get_template('plantilla_pdf_solicitud.html')
+
+        contexto = {
+            's': solicitud,
+            'ruta_logo': logo
+        }
+
+        html = plantilla.render(contexto)
+        result = BytesIO()
+
+        pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="solicitud_{refSolicitud}.pdf"'
+            return response
+
+        return JsonResponse({"error": "Error interno al generar el PDF"}, status=500)
+
+    except SolicitudTraslado.DoesNotExist:
+        return JsonResponse({"error": "La solicitud no existe"}, status=404)
 
 def __get_request_user(request):
     header_token = request.headers.get('Session', None)
