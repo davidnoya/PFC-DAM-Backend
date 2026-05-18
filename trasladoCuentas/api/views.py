@@ -10,6 +10,7 @@ from django.template.loader import get_template
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Cliente, Tarjeta, Movimiento, SolicitudTraslado
+from django.db.models import Q
 
 # Create your views here.
 
@@ -102,7 +103,7 @@ def resumen_banca(request):
                 "activa": t.activa
             })
 
-        movimientos = Movimiento.objects.filter(cuenta=cuenta).order_by('-fecha')[:5]
+        movimientos = Movimiento.objects.filter(Q(cuenta=cuenta) | Q(tarjeta__cuenta=cuenta)).order_by('-fecha')[:5]
         movimientos_json = []
         for m in movimientos:
             movimientos_json.append({

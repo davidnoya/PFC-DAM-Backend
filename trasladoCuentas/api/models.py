@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 
 # Create your models here.
 
@@ -35,15 +36,22 @@ class Tarjeta(models.Model):
         return f"{self.cuenta.alias} - {self.tipo} ({self.pan})"
 
 class Movimiento(models.Model):
-    cuenta = models.ForeignKey(Cuenta, on_delete=models.CASCADE, related_name='movimientos')
-    tarjeta = models.ForeignKey(Tarjeta, on_delete=models.SET_NULL, null=True, blank=True)
+    cuenta = models.ForeignKey('Cuenta', on_delete=models.CASCADE, null=True, blank=True)
+    tarjeta = models.ForeignKey('Tarjeta', on_delete=models.CASCADE, null=True, blank=True)
     concepto = models.CharField(max_length=100)
     importe = models.DecimalField(max_digits=10, decimal_places=2)
     fecha = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=((Q(cuenta__isnull=False) & Q(tarjeta__isnull=True)) | (Q(cuenta__isnull=True) & Q(tarjeta__isnull=False))),
+                name='check_movimiento'
+            )
+        ]
+
     def __str__(self):
-        origen = f" (Tarjeta {self.tarjeta.pan})" if self.tarjeta else " (Cuenta)"
-        return f"{self.fecha.strftime('%d/%m/%Y')} - {self.concepto}{origen}: {self.importe}€"
+        return f"{self.concepto} - {self.importe}"
 
 
 class SolicitudTraslado(models.Model):
