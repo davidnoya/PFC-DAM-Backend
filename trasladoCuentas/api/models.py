@@ -45,7 +45,7 @@ class Movimiento(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=((Q(cuenta__isnull=False) & Q(tarjeta__isnull=True)) | (Q(cuenta__isnull=True) & Q(tarjeta__isnull=False))),
+                condition=((Q(cuenta__isnull=False) & Q(tarjeta__isnull=True)) | (Q(cuenta__isnull=True) & Q(tarjeta__isnull=False))),
                 name='check_movimiento'
             )
         ]

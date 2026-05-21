@@ -32,7 +32,7 @@ def registro(request):
     json_password = body_json.get('password', None)
 
     if Cliente.objects.filter(dni=json_dni).exists():
-        return JsonResponse({"error": "Este DNI ya está registrado en ABANCA"}, status=409)
+        return JsonResponse({"error": "Este DNI ya está registrado en dBANCA"}, status=409)
 
     if Cliente.objects.filter(email=json_email).exists():
         return JsonResponse({"error": "Este email ya está en uso"}, status=409)
@@ -51,7 +51,7 @@ def registro(request):
     )
     nuevo_cliente.save()
 
-    return JsonResponse({"registered": True, "token": random_token, "mensaje": f"Bienvenido/a a ABANCA, {json_nombre}"}, status=201)
+    return JsonResponse({"registered": True, "token": random_token, "mensaje": f"Bienvenido/a a dANCA, {json_nombre}"}, status=201)
 
 
 @csrf_exempt
@@ -248,7 +248,7 @@ def generar_pdf(request, refSolicitud):
     try:
         solicitud = SolicitudTraslado.objects.get(referencia=refSolicitud, cliente=authenticated_user)
 
-        logo = os.path.join(settings.BASE_DIR, 'static', 'abanca.png')
+        logo = os.path.join(settings.BASE_DIR, 'static', 'dbanca.png')
         plantilla = get_template('plantilla_pdf_solicitud.html')
 
         contexto = {
