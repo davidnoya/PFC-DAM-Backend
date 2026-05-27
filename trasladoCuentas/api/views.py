@@ -197,44 +197,60 @@ def detalle_solicitud(request, refSolicitud):
     authenticated_user = __get_request_user(request)
     if authenticated_user is None:
         return JsonResponse({"error": "Falta el token de sesión o es inválido"}, status=401)
+
+    try:
+        solicitud = SolicitudTraslado.objects.get(referencia=refSolicitud, cliente=authenticated_user)
+    except SolicitudTraslado.DoesNotExist:
+        return JsonResponse({"error": "La solicitud no existe"}, status=404)
+
     if request.method == 'GET':
+        solicitud_json = {
+            "referencia": solicitud.referencia,
+            "entidad_origen": solicitud.entidad_origen,
+            "iban_origen": solicitud.iban_origen,
+            "iban_destino": solicitud.iban_destino,
+            "estado": solicitud.estado,
+            "fecha_ejecucion": solicitud.fecha_ejecucion.strftime('%Y-%m-%d'),
+            "fecha_solicitud": solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M'),
+            "pet_cancelar_ordenes": solicitud.pet_cancelar_ordenes,
+            "pet_bloquear_entrantes": solicitud.pet_bloquear_entrantes,
+            "pet_transferir_saldo_cierre": solicitud.pet_transferir_saldo_cierre,
+            "pet_recibir_info": solicitud.pet_recibir_info,
+            "act_habilitar_ordenes": solicitud.act_habilitar_ordenes,
+            "act_aceptar_adeudos": solicitud.act_aceptar_adeudos,
+            "act_informar_emisores": solicitud.act_informar_emisores
+        }
+        return JsonResponse(solicitud_json, status=200)
+
+    elif request.method == 'PUT':
+        if solicitud.estado != 'PENDIENTE':
+            return JsonResponse({"error": "No se pueden modificar solicitudes que no están en estado PENDIENTE"}, status=400)
+
         try:
-            solicitud = SolicitudTraslado.objects.get(referencia=refSolicitud, cliente=authenticated_user)
-            solicitud_json = {
-                "referencia": solicitud.referencia,
-                "entidad_origen": solicitud.entidad_origen,
-                "iban_origen": solicitud.iban_origen,
-                "iban_destino": solicitud.iban_destino,
-                "estado": solicitud.estado,
-                "fecha_ejecucion": solicitud.fecha_ejecucion.strftime('%Y-%m-%d'),
-                "fecha_solicitud": solicitud.fecha_solicitud.strftime('%d/%m/%Y %H:%M'),
+            data = json.loads(request.body)
 
-                "pet_cancelar_ordenes": solicitud.pet_cancelar_ordenes,
-                "pet_bloquear_entrantes": solicitud.pet_bloquear_entrantes,
-                "pet_transferir_saldo_cierre": solicitud.pet_transferir_saldo_cierre,
-                "pet_recibir_info": solicitud.pet_recibir_info,
+            solicitud.fecha_ejecucion = data.get('fecha_ejecucion', solicitud.fecha_ejecucion)
+            solicitud.pet_cancelar_ordenes = data.get('pet_cancelar_ordenes', solicitud.pet_cancelar_ordenes)
+            solicitud.pet_bloquear_entrantes = data.get('pet_bloquear_entrantes', solicitud.pet_bloquear_entrantes)
+            solicitud.pet_transferir_saldo_cierre = data.get('pet_transferir_saldo_cierre', solicitud.pet_transferir_saldo_cierre)
+            solicitud.pet_recibir_info = data.get('pet_recibir_info', solicitud.pet_recibir_info)
+            solicitud.act_habilitar_ordenes = data.get('act_habilitar_ordenes', solicitud.act_habilitar_ordenes)
+            solicitud.act_aceptar_adeudos = data.get('act_aceptar_adeudos', solicitud.act_aceptar_adeudos)
+            solicitud.act_informar_emisores = data.get('act_informar_emisores', solicitud.act_informar_emisores)
 
-                "act_habilitar_ordenes": solicitud.act_habilitar_ordenes,
-                "act_aceptar_adeudos": solicitud.act_aceptar_adeudos,
-                "act_informar_emisores": solicitud.act_informar_emisores
-            }
-            return JsonResponse(solicitud_json, status=200)
+            solicitud.save()
+            return JsonResponse({"mensaje": "Solicitud actualizada correctamente"}, status=200)
 
-        except SolicitudTraslado.DoesNotExist:
-            return JsonResponse({"error": "La solicitud no existe"}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "JSON inválido"}, status=400)
 
     elif request.method == 'DELETE':
-        try:
-            solicitud = SolicitudTraslado.objects.get(referencia=refSolicitud, cliente=authenticated_user)
+        if solicitud.estado != 'PENDIENTE':
+            return JsonResponse({"error": f"No se puede cancelar la solicitud porque ya está en estado: {solicitud.estado}"}, status=400)
 
-            if solicitud.estado != 'PENDIENTE':
-                return JsonResponse({"error": f"No se puede cancelar la solicitud porque ya está en estado: {solicitud.estado}"}, status=400)
+        solicitud.delete()
+        return JsonResponse({"mensaje": f"Solicitud con {refSolicitud} eliminada"}, status=200)
 
-            solicitud.delete()
-            return JsonResponse({"mensaje": f"Solicitud con {refSolicitud} eliminada"}, status=200)
-
-        except SolicitudTraslado.DoesNotExist:
-            return JsonResponse({"error": "La solicitud no existe"}, status=404)
     else:
         return JsonResponse({'error': 'Método HTTP no soportado'}, status=405)
 
